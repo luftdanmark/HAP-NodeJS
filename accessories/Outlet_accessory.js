@@ -3,17 +3,25 @@ var Service = require('../').Service;
 var Characteristic = require('../').Characteristic;
 var uuid = require('../').uuid;
 var err = null; // in case there were any problems
+const { spawn } = require('child_process')
 
-// here's a fake hardware device that we'll expose to HomeKit
-var FAKE_OUTLET = {
+
+// here's the projector  we'll expose to HomeKit
+var PROJECTOR = {
     setPowerOn: function(on) {
-    console.log("Turning the outlet %s!...", on ? "on" : "off");
-    if (on) {
-          FAKE_OUTLET.powerOn = true;
+    console.log("Turning the Projector %s!...", on ? "on" : "off");
+	if (on) {
+	  const deploySh = spawn('sh', [ 'projector_on.sh' ], {
+	      cwd: process.cwd() + '../scripts/'
+	  })
+          PROJECTOR.powerOn = true;
           if(err) { return console.log(err); }
           console.log("...outlet is now on.");
-    } else {
-          FAKE_OUTLET.powerOn = false;
+	} else {
+	   const deploySh = spawn('sh', [ 'projector_off.sh' ], {
+	      cwd: process.cwd() + '../scripts/'
+	  })
+          PROJECTOR.powerOn = false;
           if(err) { return console.log(err); }
           console.log("...outlet is now off.");
     }
@@ -44,7 +52,7 @@ outlet
 
 // listen for the "identify" event for this Accessory
 outlet.on('identify', function(paired, callback) {
-  FAKE_OUTLET.identify();
+  PROJECTOR.identify();
   callback(); // success
 });
 
@@ -54,7 +62,7 @@ outlet
   .addService(Service.Outlet, "Fake Outlet") // services exposed to the user should have "names" like "Fake Light" for us
   .getCharacteristic(Characteristic.On)
   .on('set', function(value, callback) {
-    FAKE_OUTLET.setPowerOn(value);
+    PROJECTOR.setPowerOn(value);
     callback(); // Our fake Outlet is synchronous - this value has been successfully set
   });
 
@@ -71,7 +79,7 @@ outlet
 
     var err = null; // in case there were any problems
 
-    if (FAKE_OUTLET.powerOn) {
+    if (PROJECTOR.powerOn) {
       console.log("Are we on? Yes.");
       callback(err, true);
     }
